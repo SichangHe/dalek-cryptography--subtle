@@ -359,6 +359,66 @@ fn greater_than_u8() {
 }
 
 #[test]
+fn greater_than_u8_boundaries() {
+    let max = !0u8;
+    let cases = [
+        (0, 0, 0),
+        (max, max, 0),
+        (0, max, 0),
+        (max, 0, 1),
+        (127, 128, 0),
+        (128, 127, 1),
+    ];
+
+    for &(a, b, expected) in &cases {
+        assert_eq!(a.ct_gt(&b).unwrap_u8(), expected);
+    }
+}
+
+#[test]
+fn greater_than_u8_exhaustive() {
+    let max = !0u8;
+    for a in 0u8..=max {
+        for b in 0u8..=max {
+            let result = a.ct_gt(&b).unwrap_u8();
+            assert!(result <= 1);
+            assert_eq!(result == 1, a > b);
+        }
+    }
+}
+
+macro_rules! generate_greater_than_boundary_tests {
+    ($(($ty:ty, $high_bit:expr)),*) => ($(
+        let max: $ty = !0;
+        for &(a, b) in &[
+            (0, 0),
+            (0, max),
+            (max, 0),
+            ($high_bit - 1, $high_bit),
+            ($high_bit, $high_bit - 1),
+            (max - 1, max),
+            (max, max - 1),
+        ] {
+            let result = a.ct_gt(&b).unwrap_u8();
+            assert!(result <= 1);
+            assert_eq!(result == 1, a > b);
+        }
+    )*)
+}
+
+#[test]
+fn greater_than_integer_boundaries() {
+    generate_greater_than_boundary_tests!(
+        (u8, 1u8 << 7),
+        (u16, 1u16 << 15),
+        (u32, 1u32 << 31),
+        (u64, 1u64 << 63)
+    );
+    #[cfg(feature = "i128")]
+    generate_greater_than_boundary_tests!((u128, 1u128 << 127));
+}
+
+#[test]
 fn greater_than_u16() {
     generate_greater_than_test!(u16);
 }
