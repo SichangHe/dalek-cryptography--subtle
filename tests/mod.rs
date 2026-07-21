@@ -87,6 +87,29 @@ fn integer_conditional_select() {
 }
 
 #[test]
+fn u8_conditional_select_exhaustive() {
+    for a in 0u8..=255 {
+        for b in 0u8..=255 {
+            for choice in 0u8..=1 {
+                let expected = if choice == 0 { a } else { b };
+                let selected = u8::conditional_select(&a, &b, choice.into());
+                assert_eq!(selected, expected);
+
+                let mut assigned = a;
+                assigned.conditional_assign(&b, choice.into());
+                assert_eq!(assigned, expected);
+
+                let mut left = a;
+                let mut right = b;
+                u8::conditional_swap(&mut left, &mut right, choice.into());
+                let expected_pair = if choice == 0 { (a, b) } else { (b, a) };
+                assert_eq!((left, right), expected_pair);
+            }
+        }
+    }
+}
+
+#[test]
 fn custom_conditional_select_i16() {
     let x: i16 = 257;
     let y: i16 = 514;
